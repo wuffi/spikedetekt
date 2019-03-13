@@ -112,12 +112,12 @@ def spike_detection_from_raw_data(basename, DatFileNames, n_ch_dat, Channels_dat
     h5s_filenames = {}
     for n in ['main', 'waves']:
         filename = basename+'.'+n+'.h5'
-        h5s[n] = tables.openFile(filename, 'w')
+        h5s[n] = tables.open_file(filename, 'w')
         h5s_filenames[n] = filename
     for n in ['raw', 'high', 'low']:
         if Parameters['RECORD_'+n.upper()]:
             filename = basename+'.'+n+'.h5'
-            h5s[n] = tables.openFile(filename, 'w')
+            h5s[n] = tables.open_file(filename, 'w')
             h5s_filenames[n] = filename
     main_h5 = h5s['main']
     # Shanks groups
@@ -126,25 +126,25 @@ def spike_detection_from_raw_data(basename, DatFileNames, n_ch_dat, Channels_dat
     shank_table = {}
     for k in ['main', 'waves']:
         h5 = h5s[k]
-        shanks_group[k] = h5.createGroup('/', 'shanks')
+        shanks_group[k] = h5.create_group('/', 'shanks')
         for i in probe.shanks_set:
-            shank_group[k, i] = h5.createGroup(shanks_group[k], 'shank_'+str(i))
+            shank_group[k, i] = h5.create_group(shanks_group[k], 'shank_'+str(i))
     # waveform data for wave file
     for i in probe.shanks_set:
-        shank_table['waveforms', i] = h5s['waves'].createTable(
+        shank_table['waveforms', i] = h5s['waves'].create_table(
             shank_group['waves', i], 'waveforms',
             waveform_description(len(probe.channel_set[i])))
     # spikedetekt data for main file, and links to waveforms
     for i in probe.shanks_set:
-        shank_table['spikedetekt', i] = main_h5.createTable(shank_group['main', i],
+        shank_table['spikedetekt', i] = main_h5.create_table(shank_group['main', i],
             'spikedetekt', shank_description(len(probe.channel_set[i])))
         main_h5.createExternalLink(shank_group['main', i], 'waveforms', 
                                    shank_table['waveforms', i])
     # Metadata
     n_samples = np.array([num_samples(DatFileName, n_ch_dat) for DatFileName in DatFileNames])
     for k, h5 in h5s.items():
-        metadata_group = h5.createGroup('/', 'metadata')
-        parameters_group = h5.createGroup(metadata_group, 'parameters')
+        metadata_group = h5.create_group('/', 'metadata')
+        parameters_group = h5.create_group(metadata_group, 'parameters')
         for k, v in Parameters.items():
             if not k.startswith('_'):
                 if isinstance(v, bool):
@@ -153,9 +153,9 @@ def spike_detection_from_raw_data(basename, DatFileNames, n_ch_dat, Channels_dat
                     r = v
                 else:
                     r = repr(v)
-                h5.setNodeAttr(parameters_group, k, r)
-        h5.setNodeAttr(metadata_group, 'probe', json.dumps(probe.probes))
-        h5.createArray(metadata_group, 'datfiles_offsets_samples',
+                h5.set_node_attr(parameters_group, k, r)
+        h5.set_node_attr(metadata_group, 'probe', json.dumps(probe.probes))
+        h5.create_array(metadata_group, 'datfiles_offsets_samples',
                        np.hstack((0, np.cumsum(n_samples)))[:-1])
     
     ########## MAIN TIME CONSUMING LOOP OF PROGRAM ########################
